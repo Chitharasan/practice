@@ -1,0 +1,17 @@
+template-file-path : practice/ecscluster.yaml
+Parameters :
+  EnvironmentName:
+    Type: String
+    Default: DevEnv
+
+  BlueTargetGroupArn:
+    Type: String
+    Description: ARN of the Blue Target Group (existing ALB)
+
+  GreenTargetGroupArn:
+    Type: String
+    Description: ARN of the Green Target Group (existing ALB)
+
+  ECRRepoName:
+    Type: String
+    Default: my-app-repo
