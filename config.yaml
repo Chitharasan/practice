@@ -1,4 +1,4 @@
-template-file-path : practice/ecscluster.yaml
+template-file-path : learning/ecscluster.yaml
 Parameters :
   EnvironmentName:
     Type: String
