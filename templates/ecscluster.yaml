@@ -124,10 +124,11 @@ Resources:
           SecurityGroups:
             - Fn::ImportValue: !Sub "${EnvironmentName}-ECS-SG-ID"
           Subnets:
-            - Fn::Imp ortValue: !Sub "${EnvironmentName}-PrivateSubnet1"
+            - Fn::ImportValue: !Sub "${EnvironmentName}-PrivateSubnet1"
             - Fn::ImportValue: !Sub "${EnvironmentName}-PrivateSubnet2"
       LoadBalancers:
-        - TargetGroupArn: !ImportValue !Sub "${EnvironmentName}-BlueTargetGroupArn"
+        - TargetGroupArn: !ImportValue 
+            Fn::ImportValue: !Sub "${EnvironmentName}-BlueTargetGroupArn"
           ContainerName: app-container
           ContainerPort: 80
 
