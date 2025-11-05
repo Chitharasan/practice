@@ -7,7 +7,7 @@ Parameters:
     Default: DevEnv
 
 Resources:
-  # Load Balancer Security Group
+  
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -31,7 +31,7 @@ Resources:
         - Key: Name
           Value: !Sub '${EnvironmentName}-ALB-SG'
 
-  # ECS Service / Task Security Group
+  
   ECSSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:

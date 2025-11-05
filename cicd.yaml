@@ -38,7 +38,6 @@ Parameters:
     Default: !ImportValue DevEnv-ECSService
 
 Resources:
-  # ------------------ CodeBuild Role ------------------
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -55,7 +54,6 @@ Resources:
         - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
         - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
 
-  # ------------------ CodeBuild Project ------------------
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
     Properties:
@@ -77,7 +75,6 @@ Resources:
         Type: CODEPIPELINE
       TimeoutInMinutes: 30
 
-  # ------------------ CodePipeline Role ------------------
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -94,13 +91,11 @@ Resources:
         - arn:aws:iam::aws:policy/AWSCodeDeployFullAccess
         - arn:aws:iam::aws:policy/AmazonS3FullAccess
 
-  # ------------------ Artifact Bucket ------------------
   ArtifactBucket:
     Type: AWS::S3::Bucket
     Properties:
       BucketName: !Sub "${EnvironmentName}-artifact-bucket-${AWS::AccountId}"
 
-  # ------------------ CodePipeline ------------------
   CodePipeline:
     Type: AWS::CodePipeline::Pipeline
     Properties:

@@ -50,7 +50,7 @@ Resources:
       Port: 80
       Protocol: HTTP
       DefaultActions:
-        - Type: forward
+        - Type: forward 
           TargetGroupArn: !Ref TargetGroup1
 
   HTTPListener1:

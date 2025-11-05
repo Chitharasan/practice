@@ -19,7 +19,7 @@ Parameters:
     Default: my-app-repo
 
 Resources: 
-      #------------------ ECR REPOSITORY ------------------
+      
   ECRRepository:
     Type: AWS::ECR::Repository
     Properties:
@@ -49,7 +49,6 @@ Resources:
         - Key: Name
           Value: !Sub "${EnvironmentName}-ECRRepo"
 
-  # ------------------ IAM ROLES ------------------
   ECSExecutionRole:
     Type: AWS::IAM::Role
     Properties:
@@ -85,7 +84,7 @@ Resources:
           Value: !Sub "${EnvironmentName}-CodeDeployRole"
 
 
-  # ------------------ ECS CLUSTER ------------------
+  
   ECSCluster:
     Type: AWS::ECS::Cluster
     Properties:
@@ -95,7 +94,6 @@ Resources:
         - Key: Name
           Value: !Sub "${EnvironmentName}-ECSCluster"
 
-  # ------------------ TASK DEFINITION ------------------
   TaskDefinition:
     Type: AWS::ECS::TaskDefinition
     Properties:
@@ -116,9 +114,8 @@ Resources:
             Options:
               awslogs-group: !Sub "/ecs/${EnvironmentName}-logs"
               awslogs-region: !Ref AWS::Region
-              awslogs-stream-prefix: ecs
+              awslogs-stream-prefix: ecscluster
 
-  # ------------------ ECS SERVICE ------------------
   ECSService:
     Type: AWS::ECS::Service
     Properties:
@@ -142,7 +139,6 @@ Resources:
           ContainerName: app-container
           ContainerPort: 80
 
-  # ------------------ CODEDEPLOY ------------------
   CodeDeployApplication:
     Type: AWS::CodeDeploy::Application
     Properties:
@@ -176,7 +172,6 @@ Resources:
               - TargetGroupArn: !Ref BlueTargetGroupArn
               - TargetGroupArn: !Ref GreenTargetGroupArn
 
-# ------------------ OUTPUTS ------------------
 Outputs:
   ECRRepositoryUri:
     Description: ECR Repository URI
