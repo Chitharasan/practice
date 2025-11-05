@@ -2,5 +2,3 @@ template-file-path : templates/ecscluster.yaml
 Parameters:
   EnvironmentName: "DevEnv"
   ECRRepoName: "my-app-repo"
-  BlueTargetGroupArn: "arn:aws:elasticloadbalancing:us-east-1:663466149419:targetgroup/Blue-target-group/75cdbd07d1c1adda"
-  GreenTargetGroupArn: "arn:aws:elasticloadbalancing:us-east-1:663466149419:targetgroup/Green-target-group/809533e88623e9dd"

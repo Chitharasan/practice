@@ -6,14 +6,6 @@ Parameters:
     Type: String
     Default: DevEnv
 
-  BlueTargetGroupArn:
-    Type: String
-    Description: ARN of the Blue Target Group (existing ALB)
-
-  GreenTargetGroupArn:
-    Type: String
-    Description: ARN of the Green Target Group (existing ALB)
-
   ECRRepoName:
     Type: String
     Default: my-app-repo
@@ -169,8 +161,10 @@ Resources:
       LoadBalancerInfo:
         TargetGroupPairInfoList:
           - TargetGroups:
-              - TargetGroupArn: !Ref BlueTargetGroupArn
-              - TargetGroupArn: !Ref GreenTargetGroupArn
+              BlueTargetGroupArn: !ImportValue 
+                Fn:: !Sub "${EnvironmentName}-BlueTargetGroupArn"
+              GreenTargetGroupArn: !ImportValue 
+                Fn:: !Sub "${EnvironmentName}-GreenTargetGroupArn"
 
 Outputs:
   ECRRepositoryUri:
