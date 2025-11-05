@@ -127,7 +127,7 @@ Resources:
             - Fn::ImportValue: !Sub "${EnvironmentName}-PrivateSubnet1"
             - Fn::ImportValue: !Sub "${EnvironmentName}-PrivateSubnet2"
       LoadBalancers:
-        - TargetGroupArn: !Ref BlueTargetGroupArn
+        - TargetGroupArn: !ImportValue !Sub "${EnvironmentName}-BlueTargetGroupArn"
           ContainerName: app-container
           ContainerPort: 80
 
