@@ -1,0 +1,61 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: Security groups for ECS and Load Balancer in existing VPC
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: DevEnv
+
+Resources:
+  # Load Balancer Security Group
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow HTTP/HTTPS inbound for ALB
+      VpcId:
+        Fn::ImportValue: !Sub '${EnvironmentName}-VPCID'
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 81
+          ToPort: 81
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-ALB-SG'
+
+  # ECS Service / Task Security Group
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Allow traffic from ALB to ECS tasks
+      VpcId: 
+        Fn::ImportValue: !Sub "${EnvironmentName}-VPCID"
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
+      Tags:
+        - Key: Name
+          Value: !Sub '${EnvironmentName}-ECS-SG'
+
+Outputs:
+  ALBSecurityGroupId:
+    Description: ALB Security Group ID
+    Value: !Ref ALBSecurityGroup
+    Export:
+      Name: !Sub '${EnvironmentName}-ALB-SG-ID'
+
+  ECSSecurityGroupId:
+    Description: ECS Security Group ID
+    Value: !Ref ECSSecurityGroup
+    Export:
+      Name: !Sub '${EnvironmentName}-ECS-SG-ID'

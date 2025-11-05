@@ -1,0 +1,76 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CloudFormation Template to create an Application Load Balancer
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: DevEnv
+
+Resources:
+  DevLoadBalancer:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Sub "${EnvironmentName}-myLoadBalancer"
+      Subnets:
+        - Fn::ImportValue: !Sub "${EnvironmentName}-PublicSubnet1"
+        - Fn::ImportValue: !Sub "${EnvironmentName}-PublicSubnet2"
+      SecurityGroups:
+        - Fn::ImportValue: !Sub "${EnvironmentName}-ALB-SG-ID"
+      Scheme: internet-facing
+      Type: application
+      IpAddressType: ipv4
+      Tags:
+        - Key: Name
+          Value: !Sub "${EnvironmentName}-ALB"
+
+  TargetGroup1:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: Blue-target-group
+      Protocol: HTTP
+      Port: 80
+      TargetType: ip
+      VpcId: !ImportValue
+        Fn::Sub: "${EnvironmentName}-VPCID"
+
+  TargetGroup2:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: Green-target-group
+      Protocol: HTTP
+      Port: 80
+      TargetType: ip
+      VpcId: !ImportValue
+        Fn::Sub: "${EnvironmentName}-VPCID"
+
+  HTTPListener:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref DevLoadBalancer
+      Port: 80
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup1
+
+  HTTPListener1:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      LoadBalancerArn: !Ref DevLoadBalancer
+      Port: 81
+      Protocol: HTTP
+      DefaultActions:
+        - Type: forward
+          TargetGroupArn: !Ref TargetGroup2
+
+Outputs:
+  LoadBalancerDNSName:
+    Description: DNS Name of the Load Balancer
+    Value: !GetAtt DevLoadBalancer.DNSName
+    Export:
+      Name: !Sub "${EnvironmentName}-LoadBalancer-DNS"    
+  LoadBalancerArn:
+    Description: ARN of the Load Balancer
+    Value: !Ref DevLoadBalancer
+    Export:
+      Name: !Sub "${EnvironmentName}-LoadBalancer-ARN"

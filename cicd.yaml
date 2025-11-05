@@ -1,0 +1,161 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: CodePipeline and CodeBuild setup for ECS Blue/Green deployment
+
+Parameters:
+  EnvironmentName:
+    Type: String
+    Default: DevEnv
+
+  GitHubRepo:
+    Type: String
+    Description: GitHub repository name (e.g., user/my-app)
+
+  GitHubBranch:
+    Type: String
+    Default: main
+
+  GitHubToken:
+    Type: String
+    Description: GitHub Personal Access Token (stored in Secrets Manager is recommended)
+    NoEcho: true
+
+  ECRRepoUri:
+    Type: String
+    Description: URI of existing ECR repository
+    Default: !ImportValue DevEnv-ECRRepoUri
+
+  CodeDeployAppName:
+    Type: String
+    Description: Name of existing CodeDeploy application
+    Default: !ImportValue DevEnv-CodeDeployApp
+
+  ECSClusterName:
+    Type: String
+    Default: !ImportValue DevEnv-ECSCluster
+
+  ECSServiceName:
+    Type: String
+    Default: !ImportValue DevEnv-ECSService
+
+Resources:
+  # ------------------ CodeBuild Role ------------------
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${EnvironmentName}-CodeBuildRole"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codebuild.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryPowerUser
+        - arn:aws:iam::aws:policy/AWSCodeBuildDeveloperAccess
+        - arn:aws:iam::aws:policy/CloudWatchLogsFullAccess
+
+  # ------------------ CodeBuild Project ------------------
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Name: !Sub "${EnvironmentName}-BuildProject"
+      ServiceRole: !GetAtt CodeBuildServiceRole.Arn
+      Artifacts:
+        Type: CODEPIPELINE
+      Environment:
+        ComputeType: BUILD_GENERAL1_SMALL
+        Image: aws/codebuild/standard:7.0
+        Type: LINUX_CONTAINER
+        PrivilegedMode: true
+        EnvironmentVariables:
+          - Name: ECR_REPO_URI
+            Value: !Ref ECRRepoUri
+          - Name: AWS_REGION
+            Value: !Ref AWS::Region
+      Source:
+        Type: CODEPIPELINE
+      TimeoutInMinutes: 30
+
+  # ------------------ CodePipeline Role ------------------
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${EnvironmentName}-CodePipelineRole"
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AWSCodePipelineFullAccess
+        - arn:aws:iam::aws:policy/AWSCodeDeployFullAccess
+        - arn:aws:iam::aws:policy/AmazonS3FullAccess
+
+  # ------------------ Artifact Bucket ------------------
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${EnvironmentName}-artifact-bucket-${AWS::AccountId}"
+
+  # ------------------ CodePipeline ------------------
+  CodePipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      Name: !Sub "${EnvironmentName}-ECSPipeline"
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: Source
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Provider: GitHub
+                Version: 1
+              Configuration:
+                Owner: !Select [0, !Split ["/", !Ref GitHubRepo]]
+                Repo: !Select [1, !Split ["/", !Ref GitHubRepo]]
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: SourceOutput
+
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Provider: CodeBuild
+                Version: 1
+              InputArtifacts:
+                - Name: SourceOutput
+              OutputArtifacts:
+                - Name: BuildOutput
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+
+        - Name: Deploy
+          Actions:
+            - Name: DeployToECS
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Provider: CodeDeployToECS
+                Version: 1
+              InputArtifacts:
+                - Name: BuildOutput
+              Configuration:
+                ApplicationName: !Ref CodeDeployAppName
+                DeploymentGroupName: !Sub "${EnvironmentName}-DeploymentGroup"
+
+Outputs:
+  PipelineName:
+    Description: CodePipeline name
+    Value: !Ref CodePipeline
